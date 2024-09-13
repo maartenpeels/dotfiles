@@ -31,7 +31,7 @@ link_home:
 	@if [ -n "$(strip $(HOME_DOTFILES))" ]; then \
 		stow --adopt $(HOME_DOTFILES); \
 	fi
-	git reset --hard
+	@git reset --hard
 
 # Symlink dotfiles for ~/.config directory (e.g., ~/.config/nvim)
 .PHONY: link_config
@@ -41,7 +41,7 @@ link_config:
 		mkdir -p ~/.config; \
 		stow --adopt --target=$(HOME)/.config $(CONFIG_DOTFILES); \
 	fi
-	git reset --hard
+	@git reset --hard
 
 # Unlink dotfiles
 .PHONY: clean
