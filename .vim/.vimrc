@@ -3,13 +3,11 @@ set relativenumber
 set nocompatible
 set autoindent
 set confirm
+set termguicolors
 
 " Plugins
 call plug#begin()
-	Plug 'sheerun/vim-polyglot'
-	Plug 'arcticicestudio/nord-vim'
-	Plug 'neoclide/coc.nvim', {'branch': 'release'}
+	Plug 'catppuccin/vim', { 'as': 'catppuccin' }
 call plug#end()
 
-colorscheme nord
-
+colorscheme catppuccin_mocha
