@@ -4,6 +4,18 @@ CONFIG_DOTFILES :=
 # Get the operating system name
 UNAME_S := $(shell uname -s)
 
+.PHONY: help
+help:
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  install           Install packages for macOS or Linux"
+	@echo "  link              Use stow to symlink dotfiles to the home directory and ~/.config"
+	@echo "  clean             Unlink dotfiles"
+
+.PHONY: all
+all: install link
+
 # Install packages for macOS or Linux
 .PHONY: install
 install:
@@ -20,9 +32,15 @@ install:
 		sudo apt-get install -y git stow vim curl; \
 	fi
 
+# Install Vim plugins
+.PHONY: install_vim_plugins
+install_vim_plugins:
+	@echo "Installing Vim plugins..."
+	@vim +PlugInstall +qall
+
 # Use stow to symlink dotfiles to the home directory and ~/.config
 .PHONY: link
-link: link_home link_config
+link: link_home link_config install_vim_plugins
 
 # Symlink dotfiles for home directory (e.g., ~/.zshrc)
 .PHONY: link_home
