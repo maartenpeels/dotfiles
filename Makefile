@@ -1,5 +1,5 @@
 HOME_DOTFILES := .vim
-CONFIG_DOTFILES := 
+CONFIG_DOTFILES := .tmux
 
 # Get the operating system name
 UNAME_S := $(shell uname -s)
@@ -38,9 +38,15 @@ install_vim_plugins:
 	@echo "Installing Vim plugins..."
 	@vim +PlugInstall +qall
 
+# Install Tmux plugins
+.PHONY: install_tmux_plugins
+install_tmux_plugins:
+	@echo "Installing Tmux plugins..."
+	@~/.tmux/plugins/tpm/bin/install_plugins
+
 # Use stow to symlink dotfiles to the home directory and ~/.config
 .PHONY: link
-link: link_home link_config install_vim_plugins
+link: link_home link_config install_vim_plugins install_tmux_plugins 
 
 # Symlink dotfiles for home directory (e.g., ~/.zshrc)
 .PHONY: link_home
