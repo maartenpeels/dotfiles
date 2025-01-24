@@ -1,6 +1,6 @@
 #/!bin/bash
 
-BASE_PACKAGES=(git stow tmux)
+BASE_PACKAGES=(git stow fzf vim tmux)
 FULL_PACKAGES=(zsh)
 
 # Check if running as root
@@ -150,6 +150,22 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
   rm -f "$HOME/.zshrc"
 else
   echo "Oh-My-Zsh is already installed."
+fi
+
+# Install NerdFonts
+if [ ! "$(fc-list | grep -i "JetBrainsMonoNL")" ]; then
+  echo "Installing JetBrains Mono Nerd Font..."
+  if [ "$OS" == "Darwin" ]; then
+    brew install font-jetbrains-mono-nerd-font
+  elif [ "$OS" == "Linux" ]; then
+    wget -P ~/.local/share/fonts https://github.com/ryanoasis/nerd-fonts/releases/download/v3.3.0/JetBrainsMono.zip \
+      && cd ~/.local/share/fonts \
+      && unzip JetBrainsMono.zip \
+      && rm JetBrainsMono.zip \
+      && fc-cache -fv
+  fi
+else
+  echo "JetBrains Mono Nerd Font is already installed."
 fi
 
 # Backup existing dotfiles
