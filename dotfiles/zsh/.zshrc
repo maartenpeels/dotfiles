@@ -20,6 +20,14 @@ source $ZSH/oh-my-zsh.sh
 export PATH="$HOME/bin:/usr/local/bin:$PATH"
 export PATH="/opt/homebrew/bin:$PATH"
 export PATH="$HOME/.tmux/plugins/:$PATH"
+export PATH="$HOME/.config/git/commands:$PATH"
+
+# Set locale to UTF-8
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+# Set terminal to support 256 colors
+export COLORTERM=truecolor
 
 # Function to source plugin if it exists
 source_if_exists() {
@@ -55,3 +63,36 @@ fi
 if command -v direnv 2>/dev/null; then
 	eval "$(direnv hook zsh)"
 fi
+
+# Helpful functions
+
+## Check if a command exists
+function exists() {
+  command -v $1 &>/dev/null
+  return $?
+}
+
+# Aliases
+
+## Go back to the previous directory and ls
+alias ..='popd &>/dev/null && ls'
+
+## Enhanced ls command with eza or fallback to ls with color
+function ls() {
+  if exists eza; then
+    eza --icons --git --ignore-glob='**/.git' --time-style=long-iso --group-directories-first -a $@
+  elif [ $(uname) == "Darwin" ]; then
+    command ls --color=auto -v -h -a -I .. -I . -I .git $@
+  else
+    command ls --color=auto -v -h -a -I .. -I . -I .git --group-directories-first $@
+  fi
+}
+
+## Enhanced cd command that also runs ls and pushes directory to stack
+## Go back to the previous directory with `..`
+cd() {
+  builtin cd "$@" && ls
+  if [ $? -eq 0 ]; then
+    pushd .
+  fi
+}

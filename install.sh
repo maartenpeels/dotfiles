@@ -1,7 +1,7 @@
 #/!bin/bash
 
-BASE_PACKAGES=(git stow fzf vim tmux)
-FULL_PACKAGES=(zsh)
+BASE_PACKAGES=(git stow fzf vim eza tmux)
+FULL_PACKAGES=(zsh neovim)
 
 # Check if running as root
 if [ "$EUID" -eq 0 ]; then
@@ -68,8 +68,6 @@ is_installed() {
     dpkg -l | grep "^ii  $1 " >/dev/null 2>&1
   fi
 }
-
-#: fzf
 
 # Install the required packages
 echo "Installing required packages..."
@@ -173,11 +171,24 @@ backup_dir="$HOME/.dotfiles_backup/$(date +%Y%m%d_%H%M%S)"
 echo "Backing up existing dotfiles to $backup_dir"
 mkdir -p "$backup_dir"
 
+# set defaults
+XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+
+# setup some directories
+mkdir -p "$XDG_CONFIG_HOME"
+mkdir -p "$HOME/.local/bin"
+
 # Install the dotfiles
 echo "Installing dotfiles..."
 
-# TODO: Somehow use the type to determine which dotfiles to install
-
-# Change to the dotfiles directory and stow everything to home directory
 cd "$(dirname "$0")/dotfiles"
-stow -v -t "$HOME" .
+if [ "$TYPE" == "bare" ] || [ "$TYPE" == "full" ]; then
+  stow -v -t "$HOME" git
+  stow -v -t "$HOME" zsh
+  stow -v -t "$HOME" tmux
+fi
+
+if [ "$TYPE" == "full" ]; then
+  stow -v -t "$HOME" nvim
+  stow -v -t "$HOME" p10k
+fi
