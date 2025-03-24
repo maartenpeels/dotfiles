@@ -180,7 +180,7 @@ mkdir -p "$HOME/.local/bin"
 
 # Install the dotfiles
 echo "Installing dotfiles..."
-STOW_DIR="$HOME/dotfiles"
+STOW_DIR="$HOME/dotfiles/dotfiles"
 cd "$STOW_DIR" || exit 1
 
 if [ "$TYPE" == "bare" ] || [ "$TYPE" == "full" ]; then
