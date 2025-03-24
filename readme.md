@@ -7,13 +7,13 @@ This script will setup a new system (only Mac/Ubuntu tested), it installs the pa
 1. Clone the repository:
 
 ```bash
-git clone <repository_url>
+git clone https://github.com/maartenpeels/dotfiles
 ```
 
 2. Change to the directory:
 
 ```bash
-cd <repository_name>
+cd dotfiles
 ```
 
 3. Run the install script:
