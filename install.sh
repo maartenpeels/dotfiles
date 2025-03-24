@@ -180,8 +180,9 @@ mkdir -p "$HOME/.local/bin"
 
 # Install the dotfiles
 echo "Installing dotfiles..."
+STOW_DIR="$HOME/dotfiles"
+cd "$STOW_DIR" || exit 1
 
-cd "$(dirname "$0")/dotfiles"
 if [ "$TYPE" == "bare" ] || [ "$TYPE" == "full" ]; then
   stow -v -t "$HOME" git
   stow -v -t "$HOME" zsh
