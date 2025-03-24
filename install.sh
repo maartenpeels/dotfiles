@@ -184,12 +184,12 @@ STOW_DIR="$HOME/dotfiles/dotfiles"
 cd "$STOW_DIR" || exit 1
 
 if [ "$TYPE" == "bare" ] || [ "$TYPE" == "full" ]; then
-  stow -v -t "$HOME" git
-  stow -v -t "$HOME" zsh
-  stow -v -t "$HOME" tmux
+  stow -t "$HOME" git
+  stow -t "$HOME" zsh
+  stow -t "$HOME" tmux
 fi
 
 if [ "$TYPE" == "full" ]; then
-  stow -v -t "$HOME" nvim
-  stow -v -t "$HOME" p10k
+  stow -t "$HOME" nvim
+  stow -t "$HOME" p10k
 fi
