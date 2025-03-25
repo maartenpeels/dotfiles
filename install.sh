@@ -1,7 +1,6 @@
 #/!bin/bash
 
-BASE_PACKAGES=(git stow fzf vim eza tmux)
-FULL_PACKAGES=(zsh neovim)
+PACKAGES=(git stow fzf vim eza neovim tmux zsh)
 
 # Check if running as root
 if [ "$EUID" -eq 0 ]; then
@@ -72,26 +71,14 @@ is_installed() {
 # Install the required packages
 echo "Installing required packages..."
 if [ "$PACKAGE_MANAGER" == "brew" ]; then
-  for package in "${BASE_PACKAGES[@]}"; do
+  for package in "${PACKAGES[@]}"; do
     is_installed "$package" && echo "$package is already installed." || brew install "$package"
   done
-  
-  if [ "$TYPE" == "full" ]; then
-    for package in "${FULL_PACKAGES[@]}"; do
-      is_installed "$package" && echo "$package is already installed." || brew install "$package"
-    done
-  fi
 elif [ "$PACKAGE_MANAGER" == "apt" ]; then
   sudo apt update
-  for package in "${BASE_PACKAGES[@]}"; do
+  for package in "${PACKAGES[@]}"; do
     is_installed "$package" && echo "$package is already installed." || sudo apt install -y "$package"
   done
-  
-  if [ "$TYPE" == "full" ]; then
-    for package in "${FULL_PACKAGES[@]}"; do
-      is_installed "$package" && echo "$package is already installed." || sudo apt install -y "$package"
-    done
-  fi
 fi
 
 # Install Oh-My-Zsh
@@ -183,13 +170,9 @@ echo "Installing dotfiles..."
 STOW_DIR="$HOME/dotfiles/dotfiles"
 cd "$STOW_DIR" || exit 1
 
-if [ "$TYPE" == "bare" ] || [ "$TYPE" == "full" ]; then
-  stow -t "$HOME" git
-  stow -t "$HOME" zsh
-  stow -t "$HOME" tmux
-fi
-
-if [ "$TYPE" == "full" ]; then
-  stow -t "$HOME" nvim
-  stow -t "$HOME" p10k
-fi
+stow -t "$HOME" git
+stow -t "$HOME" zsh
+stow -t "$HOME" oh-my-zsh
+stow -t "$HOME" tmux
+stow -t "$HOME" nvim
+stow -t "$HOME" p10k
