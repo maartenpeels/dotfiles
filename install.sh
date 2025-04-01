@@ -19,21 +19,6 @@ if [ "$(uname)" == "Linux" ] && [ "$EUID" -ne 0 ]; then
     fi
 fi
 
-# Parse command line arguments
-if [ $# -lt 1 ]; then
-  echo "Usage: $0 <bare|full>"
-  exit 1
-fi
-
-# Check if the type is valid
-if [ "$1" != "bare" ] && [ "$1" != "full" ]; then
-  echo "Error: Invalid type: $1. Valid types are: bare, full"
-  exit 1
-fi
-
-# Set the type
-TYPE=$1
-
 # Detect the OS
 OS=$(uname)
 
@@ -172,7 +157,6 @@ cd "$STOW_DIR" || exit 1
 
 stow -t "$HOME" git
 stow -t "$HOME" zsh
-stow -t "$HOME" oh-my-zsh
 stow -t "$HOME" tmux
 stow -t "$HOME" nvim
 stow -t "$HOME" p10k

@@ -19,5 +19,5 @@ cd dotfiles
 3. Run the install script:
 
 ```bash
-./install.sh bare|full
+./install.sh
 ```
