@@ -5,11 +5,12 @@ set -e
 
 function get_default_branch() {
   # First try to get from origin/HEAD
-  if remote_head=$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null); then
-    basename "$remote_head"
+  remote_head=$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null)
+  if [[ -n "$remote_head" ]]; then
+    echo "$remote_head"
     return
   fi
-  
+
   # Otherwise try main or master locally
   git branch --sort=-committerdate -l main master | head -1 | sed 's/^[^a-zA-Z]*//'
 }
@@ -19,7 +20,7 @@ function determine_branch() {
   local default_branch=$(get_default_branch)
 
   # Check if we found a default branch
-  if [[ -z $default_branch ]]; then 
+  if [[ -z $default_branch ]]; then
     echo "No default branch found." 1>&2
     exit 1
   fi
@@ -37,17 +38,17 @@ BRANCH=$(determine_branch "$@")
 echo "Comparing with branch: $BRANCH"
 
 # Check if the branch exists
-if [ ! `git rev-parse --verify $BRANCH 2>/dev/null` ]; then
-	echo "Branch '$BRANCH' does not exist." 1>&2
-	exit 1
+if [ ! $(git rev-parse --verify $BRANCH 2>/dev/null) ]; then
+  echo "Branch '$BRANCH' does not exist." 1>&2
+  exit 1
 fi
 
 # Get the base commit
 BASE_COMMIT=$(git merge-base $BRANCH HEAD)
 
-if [[ -z $BASE_COMMIT ]]; then 
-	echo "HEAD has no common base with branch '$BRANCH'." 1>&2
-	exit 1
+if [[ -z $BASE_COMMIT ]]; then
+  echo "HEAD has no common base with branch '$BRANCH'." 1>&2
+  exit 1
 fi
 
 # Open the diff

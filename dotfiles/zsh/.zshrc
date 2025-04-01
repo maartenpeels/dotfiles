@@ -64,6 +64,10 @@ if command -v direnv 2>/dev/null; then
 	eval "$(direnv hook zsh)"
 fi
 
+# ZSH autocomplete
+autoload -Uz compinit
+compinit
+
 # Helpful functions
 
 ## Check if a command exists
