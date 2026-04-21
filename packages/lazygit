@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+command -v lazygit >/dev/null 2>&1 && { echo "  [skip] lazygit (already installed)"; exit 0; }
+
+case "$(uname -s)" in
+    Darwin)
+        brew install lazygit
+        ;;
+    Linux)
+        TEMP=$(mktemp -d)
+        trap 'rm -rf "$TEMP"' EXIT
+        cd "$TEMP"
+
+        case "$(uname -m)" in
+            x86_64)       LG_ARCH="x86_64" ;;
+            aarch64|arm64) LG_ARCH="arm64" ;;
+            *) echo "Unsupported arch: $(uname -m)" >&2; exit 1 ;;
+        esac
+
+        URL=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest \
+            | grep "browser_download_url.*Linux_${LG_ARCH}\.tar\.gz" \
+            | grep -o 'https://[^"]*')
+
+        [[ -z "$URL" ]] && { echo "Failed to fetch lazygit release URL" >&2; exit 1; }
+
+        curl -L -o lazygit.tar.gz "$URL"
+        tar xzf lazygit.tar.gz lazygit
+        mkdir -p "$HOME/.local/bin"
+        mv lazygit "$HOME/.local/bin/lazygit"
+        ;;
+    *)
+        echo "Unsupported OS: $(uname -s)" >&2; exit 1
+        ;;
+esac

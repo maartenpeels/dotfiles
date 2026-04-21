@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+command -v tree-sitter >/dev/null 2>&1 && { echo "  [skip] tree-sitter (already installed)"; exit 0; }
+
+case "$(uname -s)" in
+    Darwin)
+        brew install tree-sitter
+        ;;
+    Linux)
+        TEMP=$(mktemp -d)
+        trap 'rm -rf "$TEMP"' EXIT
+        cd "$TEMP"
+
+        case "$(uname -m)" in
+            x86_64)       TS_ARCH="x64" ;;
+            aarch64|arm64) TS_ARCH="arm64" ;;
+            *) echo "Unsupported arch: $(uname -m)" >&2; exit 1 ;;
+        esac
+
+        URL=$(curl -s https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest \
+            | grep "browser_download_url.*tree-sitter-linux-${TS_ARCH}\.gz" \
+            | grep -o 'https://[^"]*')
+
+        [[ -z "$URL" ]] && { echo "Failed to fetch tree-sitter release URL" >&2; exit 1; }
+
+        curl -L -o tree-sitter.gz "$URL"
+        gunzip tree-sitter.gz
+        mkdir -p "$HOME/.local/bin"
+        mv tree-sitter "$HOME/.local/bin/tree-sitter"
+        chmod +x "$HOME/.local/bin/tree-sitter"
+        ;;
+    *)
+        echo "Unsupported OS: $(uname -s)" >&2; exit 1
+        ;;
+esac

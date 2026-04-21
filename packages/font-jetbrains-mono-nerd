@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+case "$(uname -s)" in
+    Darwin)
+        ls "$HOME/Library/Fonts/JetBrainsMono"* >/dev/null 2>&1 \
+            || ls "/Library/Fonts/JetBrainsMono"* >/dev/null 2>&1 \
+            && { echo "  [skip] font-jetbrains-mono-nerd (already installed)"; exit 0; }
+        brew install --cask font-jetbrains-mono-nerd-font
+        ;;
+    Linux)
+        # Check if font already installed
+        fc-list | grep -qi "JetBrainsMono" \
+            && { echo "  [skip] font-jetbrains-mono-nerd (already installed)"; exit 0; }
+        curl -fsSL https://raw.githubusercontent.com/getnf/getnf/main/install.sh | bash
+        "$HOME/.local/bin/getnf" -i JetBrainsMono
+        fc-cache -fv
+        ;;
+    *)
+        echo "Unsupported OS: $(uname -s)" >&2; exit 1
+        ;;
+esac

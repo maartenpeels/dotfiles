@@ -32,13 +32,19 @@ ensure_package_manager() {
 
 install_package() {
     local os="$1" pkg_file="$2"
+    local name
+    name="$(basename "$pkg_file")"
+
+    if [[ -x "$pkg_file" ]]; then
+        info "Installing $name..."
+        "$pkg_file"
+        ok "$name"
+        return
+    fi
 
     BREW="" APT="" CHECK="" APT_CHECK=""
     # shellcheck source=/dev/null
     source "$pkg_file"
-
-    local name
-    name="$(basename "$pkg_file")"
 
     case "$os" in
         mac)

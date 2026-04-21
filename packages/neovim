@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+command -v nvim >/dev/null 2>&1 && { echo "  [skip] neovim (already installed)"; exit 0; }
+
+case "$(uname -s)" in
+    Darwin)
+        brew install neovim
+        ;;
+    Linux)
+        TEMP=$(mktemp -d)
+        trap 'rm -rf "$TEMP"' EXIT
+        cd "$TEMP"
+
+        case "$(uname -m)" in
+            x86_64)       NVIM_ARCH="linux-x86_64" ;;
+            aarch64|arm64) NVIM_ARCH="linux-arm64" ;;
+            *) echo "Unsupported arch: $(uname -m)" >&2; exit 1 ;;
+        esac
+
+        URL=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest \
+            | grep "browser_download_url.*${NVIM_ARCH}\.tar\.gz" \
+            | grep -v sha256sum \
+            | grep -o 'https://[^"]*')
+
+        [[ -z "$URL" ]] && { echo "Failed to fetch neovim release URL" >&2; exit 1; }
+
+        curl -L -o nvim.tar.gz "$URL"
+        tar xzf nvim.tar.gz
+        mkdir -p "$HOME/.local"
+        cp -r "nvim-${NVIM_ARCH}/"* "$HOME/.local/"
+        ;;
+    *)
+        echo "Unsupported OS: $(uname -s)" >&2; exit 1
+        ;;
+esac

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+command -v stylua >/dev/null 2>&1 && { echo "  [skip] stylua (already installed)"; exit 0; }
+
+case "$(uname -s)" in
+    Darwin)
+        brew install stylua
+        ;;
+    Linux)
+        TEMP=$(mktemp -d)
+        trap 'rm -rf "$TEMP"' EXIT
+        cd "$TEMP"
+
+        case "$(uname -m)" in
+            x86_64)       SL_ARCH="x86_64-unknown-linux-musl" ;;
+            aarch64|arm64) SL_ARCH="aarch64-unknown-linux-musl" ;;
+            *) echo "Unsupported arch: $(uname -m)" >&2; exit 1 ;;
+        esac
+
+        URL=$(curl -s https://api.github.com/repos/JohnnyMorganz/StyLua/releases/latest \
+            | grep "browser_download_url.*stylua-linux-${SL_ARCH}\.zip" \
+            | grep -o 'https://[^"]*')
+
+        [[ -z "$URL" ]] && { echo "Failed to fetch stylua release URL" >&2; exit 1; }
+
+        curl -L -o stylua.zip "$URL"
+        unzip -q stylua.zip
+        mkdir -p "$HOME/.local/bin"
+        mv stylua "$HOME/.local/bin/stylua"
+        chmod +x "$HOME/.local/bin/stylua"
+        ;;
+    *)
+        echo "Unsupported OS: $(uname -s)" >&2; exit 1
+        ;;
+esac
