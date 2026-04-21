@@ -63,6 +63,7 @@ Commands:
   add <name>   Create a new worktree and bootstrap it
   rm [name]    Remove a worktree (interactive with fzf if no name given)
   go           Navigate to an existing worktree using fzf
+  dev [name]   Open a worktree in a dev session (cmux or tmux)
   status       Show all worktrees with their path and status
   help         Show this help message
 EOF
@@ -98,6 +99,64 @@ cmd_add() {
 
   echo "$wt_path" >/tmp/wt_last_dir
   copy_to_clipboard "cd \"$wt_path\"" && info "(Command copied to clipboard)"
+
+  read -rp "Open dev session? [c]mux / [t]mux / [N]o: " open_in
+  case "$open_in" in
+    c|C) "$SCRIPT_DIR/wt-cmux" "$wt_path" ;;
+    t|T) "$SCRIPT_DIR/wt-tmux" "$wt_path" ;;
+  esac
+}
+
+cmd_dev() {
+  local name="${1:-}"
+  local wt_path=""
+
+  if [[ -n "$name" ]]; then
+    wt_path="$WORKSPACE_ROOT/$name"
+    [[ ! -d "$wt_path" ]] && die "Worktree not found at $wt_path"
+  else
+    command -v fzf &>/dev/null || die "fzf not found. Provide a worktree name or install fzf."
+
+    local fzf_lines=() wt_branch wt_rel status display selected
+
+    wt_rel="$(basename "$BASE_REPO_PATH")"
+    status="$(get_worktree_status "$BASE_REPO_PATH")"
+    local base_branch
+    if ! base_branch="$(git -C "$BASE_REPO_PATH" symbolic-ref --short HEAD 2>/dev/null)"; then
+      base_branch="(detached HEAD)"
+    fi
+    display="$(printf "%-30s %-20s %s" "$base_branch (MAIN)" "./$wt_rel" "$status")"
+    fzf_lines+=("${display}"$'\t'"${BASE_REPO_PATH}")
+
+    while IFS=$'\t' read -r wt_path wt_branch; do
+      wt_rel="$(basename "$wt_path")"
+      status="$(get_worktree_status "$wt_path")"
+      display="$(printf "%-30s %-20s %s" "$wt_branch" "./$wt_rel" "$status")"
+      fzf_lines+=("${display}"$'\t'"${wt_path}")
+    done < <(get_worktrees)
+
+    set +e
+    selected="$(printf "%s\n" "${fzf_lines[@]}" | fzf \
+      --with-nth=1 \
+      --delimiter=$'\t' \
+      --layout=reverse \
+      --header="$(printf '%-30s %-20s %s' 'BRANCH' 'PATH' 'STATUS')" \
+      --prompt="Open dev session for: " \
+      --height=40%)"
+    set -e
+
+    [[ -z "$selected" ]] && exit 0
+    wt_path="$(echo "$selected" | awk -F$'\t' '{print $2}')"
+  fi
+
+  local multiplexer=""
+  read -rp "Open in [c]mux or [t]mux? " multiplexer
+
+  case "$multiplexer" in
+    c|C) "$SCRIPT_DIR/wt-cmux" "$wt_path" ;;
+    t|T) "$SCRIPT_DIR/wt-tmux" "$wt_path" ;;
+    *) die "Unknown multiplexer: $multiplexer" ;;
+  esac
 }
 
 cmd_status() {
@@ -256,6 +315,7 @@ main() {
   add) cmd_add "$@" ;;
   rm | cleanup) cmd_rm "$@" ;;
   go | cd) cmd_go ;;
+  dev) cmd_dev "$@" ;;
   status | st) cmd_status ;;
   help) cmd_help ;;
   *)

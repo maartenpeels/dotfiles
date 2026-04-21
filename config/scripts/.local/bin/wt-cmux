@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CMUX_BIN="${CMUX_BIN:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
+WT_AI_CMD="${WT_AI_CMD:-opencode}"
+
+usage() {
+  cat <<EOF
+Usage: wt-cmux [path]
+
+Spin up a cmux dev workspace for a worktree (or any directory).
+Workspace name = basename of path.
+
+Tabs: nvim | lazygit | ai (\$WT_AI_CMD) | shell
+
+Environment:
+  CMUX_BIN    path to cmux CLI (default: /Applications/cmux.app/Contents/Resources/bin/cmux)
+  WT_AI_CMD   AI tool to launch (default: opencode)
+EOF
+}
+
+[[ "${1:-}" == "--help" || "${1:-}" == "-h" ]] && { usage; exit 0; }
+[[ -x "$CMUX_BIN" ]] || { echo "wt-cmux: cmux binary not found at $CMUX_BIN" >&2; exit 1; }
+
+WTP="${1:-$PWD}"
+WTP="$(cd "$WTP" && pwd)"
+NAME="$(basename "$WTP")"
+
+_cmux() {
+  local out
+  out=$("$CMUX_BIN" "$@" 2>&1) || {
+    if grep -qiE "access denied|only processes|broken pipe" <<<"$out"; then
+      echo "wt-cmux: cmux socket access denied." >&2
+      echo "  Fix: cmux → Settings → API/Socket → set mode to 'Allow All'" >&2
+      exit 1
+    fi
+    echo "$out" >&2
+    return 1
+  }
+  echo "$out"
+}
+
+# Extract bare ref (workspace:N / surface:N / pane:N) from a line of cmux output
+_ref() { grep -oE '(workspace|surface|pane):[0-9]+' <<<"$1" | head -1; }
+
+# Run cmux command, return first ref from output
+_cmux_ref() { _ref "$(_cmux "$@")"; }
+
+# Create workspace — focus it, get its ref
+WS=$(_cmux_ref new-workspace --name "$NAME" --cwd "$WTP")
+
+# Get the initial surface (tab 1)
+S_NVIM=$(_ref "$(_cmux list-pane-surfaces --workspace "$WS" | head -1)")
+
+# Create tabs (ai last = auto-focused on open)
+S_GIT=$(_cmux_ref   new-surface --workspace "$WS")
+S_SHELL=$(_cmux_ref new-surface --workspace "$WS")
+S_AI=$(_cmux_ref    new-surface --workspace "$WS")
+
+# Name tabs
+_cmux rename-tab --workspace "$WS" --surface "$S_NVIM"  "nvim"  >/dev/null
+_cmux rename-tab --workspace "$WS" --surface "$S_GIT"   "git"   >/dev/null
+_cmux rename-tab --workspace "$WS" --surface "$S_SHELL" "shell" >/dev/null
+_cmux rename-tab --workspace "$WS" --surface "$S_AI"    "ai"    >/dev/null
+
+# Launch tools
+_cmux send --workspace "$WS" --surface "$S_NVIM" "nvim ." >/dev/null
+_cmux send-key --workspace "$WS" --surface "$S_NVIM" Enter >/dev/null
+
+_cmux send --workspace "$WS" --surface "$S_GIT" "lazygit" >/dev/null
+_cmux send-key --workspace "$WS" --surface "$S_GIT" Enter >/dev/null
+
+_cmux send --workspace "$WS" --surface "$S_AI" "$WT_AI_CMD" >/dev/null
+_cmux send-key --workspace "$WS" --surface "$S_AI" Enter >/dev/null

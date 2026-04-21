@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+WT_AI_CMD="${WT_AI_CMD:-opencode}"
+
+usage() {
+  cat <<EOF
+Usage: wt-tmux [path]
+
+Spin up a tmux dev session for a worktree (or any directory).
+Session name = basename of path. Attaches if session already exists.
+
+Windows: nvim | lazygit | shell | ai (\$WT_AI_CMD, default: opencode)
+EOF
+}
+
+[[ "${1:-}" == "--help" || "${1:-}" == "-h" ]] && { usage; exit 0; }
+
+WTP="${1:-$PWD}"
+WTP="$(cd "$WTP" && pwd)"
+SESSION="$(basename "$WTP" | tr '.' '-')"
+
+_attach() {
+  if [[ -n "${TMUX:-}" ]]; then
+    tmux switch-client -t "$SESSION"
+  else
+    tmux attach-session -t "$SESSION"
+  fi
+}
+
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+  _attach
+  exit 0
+fi
+
+tmux new-session -d -s "$SESSION" -c "$WTP" -n "nvim"
+tmux send-keys -t "${SESSION}:nvim" "nvim ." Enter
+
+tmux new-window -t "$SESSION" -n "git" -c "$WTP"
+tmux send-keys -t "${SESSION}:git" "lazygit" Enter
+
+tmux new-window -t "$SESSION" -n "shell" -c "$WTP"
+
+tmux new-window -t "$SESSION" -n "ai" -c "$WTP"
+tmux send-keys -t "${SESSION}:ai" "$WT_AI_CMD" Enter
+
+tmux select-window -t "${SESSION}:nvim"
+_attach
