@@ -24,7 +24,10 @@ EOF
 
 WTP="${1:-$PWD}"
 WTP="$(cd "$WTP" && pwd)"
-NAME="$(basename "$WTP")"
+MAIN_WT=$(git -C "$WTP" worktree list --porcelain | awk '/^worktree /{print $2; exit}')
+REPO_NAME=$(basename "$MAIN_WT")
+BRANCH=$(git -C "$WTP" rev-parse --abbrev-ref HEAD 2>/dev/null || basename "$WTP")
+NAME="${REPO_NAME} > ${BRANCH}"
 
 _cmux() {
   local out
