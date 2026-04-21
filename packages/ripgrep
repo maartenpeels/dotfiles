@@ -1,0 +1,3 @@
+BREW=ripgrep
+APT=ripgrep
+CHECK=rg

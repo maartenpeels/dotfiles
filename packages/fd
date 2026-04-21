@@ -1,0 +1,5 @@
+BREW=fd
+APT=fd-find
+# Ubuntu installs as fdfind; Homebrew installs as fd
+CHECK=fd
+APT_CHECK=fdfind

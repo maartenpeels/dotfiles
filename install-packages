@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PACKAGES_DIR="$DOTFILES_DIR/packages"
+
+die() { echo "Error: $*" >&2; exit 1; }
+info() { echo "  $*"; }
+ok() { echo "  [ok] $*"; }
+skip() { echo "  [skip] $* (already installed)"; }
+
+detect_os() {
+    if [[ "$OSTYPE" == darwin* ]]; then
+        echo "mac"
+    elif [[ -f /etc/debian_version ]]; then
+        echo "debian"
+    else
+        die "Unsupported OS. Add support in detect_os()."
+    fi
+}
+
+ensure_package_manager() {
+    case "$1" in
+        mac)
+            command -v brew >/dev/null 2>&1 || die "Homebrew not found. Install from https://brew.sh"
+            ;;
+        debian)
+            command -v apt-get >/dev/null 2>&1 || die "apt-get not found"
+            ;;
+    esac
+}
+
+install_package() {
+    local os="$1" pkg_file="$2"
+
+    BREW="" APT="" CHECK="" APT_CHECK=""
+    # shellcheck source=/dev/null
+    source "$pkg_file"
+
+    local name
+    name="$(basename "$pkg_file")"
+
+    case "$os" in
+        mac)
+            local check_cmd="${CHECK:-$BREW}"
+            if command -v "$check_cmd" >/dev/null 2>&1; then
+                skip "$name"
+                return
+            fi
+            [[ -n "$BREW" ]] || { info "No brew package defined for $name, skipping"; return; }
+            info "Installing $name via brew..."
+            brew install "$BREW"
+            ok "$name"
+            ;;
+        debian)
+            local check_cmd="${APT_CHECK:-${CHECK:-$APT}}"
+            if command -v "$check_cmd" >/dev/null 2>&1; then
+                skip "$name"
+                return
+            fi
+            [[ -n "$APT" ]] || { info "No apt package defined for $name, skipping"; return; }
+            info "Installing $name via apt..."
+            sudo apt-get install -y "$APT"
+            ok "$name"
+            ;;
+    esac
+}
+
+OS="$(detect_os)"
+ensure_package_manager "$OS"
+
+if [[ "$OS" == "debian" ]]; then
+    sudo apt-get update -qq
+fi
+
+pkgs=()
+if [[ $# -gt 0 ]]; then
+    for arg in "$@"; do
+        [[ -f "$PACKAGES_DIR/$arg" ]] || die "Unknown package: $arg"
+        pkgs+=("$PACKAGES_DIR/$arg")
+    done
+else
+    for f in "$PACKAGES_DIR"/*; do
+        [[ -f "$f" ]] && pkgs+=("$f")
+    done
+fi
+
+echo "Installing packages on $OS..."
+for pkg in "${pkgs[@]}"; do
+    install_package "$OS" "$pkg"
+done
+
+echo "Done."

@@ -1,0 +1,3 @@
+BREW=tmux
+APT=tmux
+CHECK=tmux
