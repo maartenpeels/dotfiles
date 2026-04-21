@@ -1,0 +1,269 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../lib/workspace.sh"
+
+copy_to_clipboard() {
+  local text="$1"
+  if command -v pbcopy &>/dev/null; then
+    echo "$text" | pbcopy
+  elif command -v xclip &>/dev/null; then
+    echo "$text" | xclip -selection clipboard
+  elif command -v xsel &>/dev/null; then
+    echo "$text" | xsel --clipboard --input
+  elif command -v wl-copy &>/dev/null; then
+    echo "$text" | wl-copy
+  else
+    return 1
+  fi
+}
+
+get_worktrees() {
+  local wt_path="" wt_branch=""
+
+  while IFS= read -r line; do
+    if [[ "$line" == worktree\ * ]]; then
+      wt_path="${line#worktree }"
+    elif [[ "$line" == branch\ * ]] || [[ "$line" == detached ]]; then
+      [[ -d "$wt_path/.git" ]] && continue
+
+      if [[ "$line" == branch\ * ]]; then
+        wt_branch="${line#branch refs/heads/}"
+      else
+        wt_branch="(detached HEAD)"
+      fi
+
+      echo -e "${wt_path}\t${wt_branch}"
+    fi
+  done < <(git -C "$BASE_REPO_PATH" worktree list --porcelain 2>/dev/null)
+}
+
+get_worktree_status() {
+  local wt_path="$1"
+  local dirty="" untracked=""
+
+  if ! git -C "$wt_path" diff --quiet 2>/dev/null || ! git -C "$wt_path" diff --cached --quiet 2>/dev/null; then
+    dirty="dirty"
+  fi
+
+  untracked=$(git -C "$wt_path" ls-files --others --exclude-standard 2>/dev/null | wc -l | tr -d ' ')
+  if [[ "$untracked" -gt 0 ]]; then
+    dirty="${dirty:+$dirty, }$untracked untracked"
+  fi
+
+  echo "${dirty:-clean}"
+}
+
+cmd_help() {
+  cat <<EOF
+Usage: wt <command> [arguments]
+
+Commands:
+  add <name>   Create a new worktree and bootstrap it
+  rm [name]    Remove a worktree (interactive with fzf if no name given)
+  go           Navigate to an existing worktree using fzf
+  status       Show all worktrees with their path and status
+  help         Show this help message
+EOF
+}
+
+cmd_add() {
+  local branch="${1:-}"
+  [[ -z "$branch" ]] && die "You must provide a branch name.\nUsage: wt add <feature-name>"
+
+  local wt_path="$WORKSPACE_ROOT/$branch"
+
+  [[ -d "$wt_path" ]] && die "Directory already exists at $wt_path"
+
+  info "Creating worktree at $wt_path..."
+
+  if git -C "$BASE_REPO_PATH" show-ref --verify --quiet "refs/heads/$branch"; then
+    git -C "$BASE_REPO_PATH" worktree add "$wt_path" "$branch"
+  elif git -C "$BASE_REPO_PATH" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+    git -C "$BASE_REPO_PATH" worktree add --track -b "$branch" "$wt_path" "origin/$branch"
+  else
+    git -C "$BASE_REPO_PATH" worktree add -b "$branch" "$wt_path"
+  fi
+
+  local bootstrap_script="$LOCAL_DIR/local/bin/bootstrap"
+  if [[ -x "$bootstrap_script" ]]; then
+    "$bootstrap_script" "$wt_path"
+  else
+    warn "bootstrap not found at $bootstrap_script, skipping."
+  fi
+
+  success "Worktree setup complete!"
+  info "To enter your new workspace, run: cd \"$wt_path\""
+
+  echo "$wt_path" >/tmp/wt_last_dir
+  copy_to_clipboard "cd \"$wt_path\"" && info "(Command copied to clipboard)"
+}
+
+cmd_status() {
+  local wt_path wt_branch wt_rel status
+
+  info "Worktrees in $WORKSPACE_ROOT:\n"
+  printf "  %-30s %-20s %s\n" "BRANCH" "PATH" "STATUS"
+  printf "  %-30s %-20s %s\n" "------" "----" "------"
+
+  while IFS=$'\t' read -r wt_path wt_branch; do
+    wt_rel="$(basename "$wt_path")"
+    status="$(get_worktree_status "$wt_path")"
+    printf "  %-30s %-20s %s\n" "$wt_branch" "./$wt_rel" "$status"
+  done < <(get_worktrees)
+}
+
+cmd_go() {
+  command -v fzf &>/dev/null || die "fzf not found. Please install fzf to use this command."
+
+  local fzf_lines=()
+  local wt_path wt_branch wt_rel status display selected
+
+  wt_rel="$(basename "$BASE_REPO_PATH")"
+  status="$(get_worktree_status "$BASE_REPO_PATH")"
+
+  local base_branch
+  if ! base_branch="$(git -C "$BASE_REPO_PATH" symbolic-ref --short HEAD 2>/dev/null)"; then
+    base_branch="(detached HEAD)"
+  fi
+
+  display="$(printf "%-30s %-20s %s" "$base_branch (MAIN)" "./$wt_rel" "$status")"
+  fzf_lines+=("${display}"$'\t'"${BASE_REPO_PATH}"$'\t'"${base_branch}")
+
+  while IFS=$'\t' read -r wt_path wt_branch; do
+    wt_rel="$(basename "$wt_path")"
+    status="$(get_worktree_status "$wt_path")"
+    display="$(printf "%-30s %-20s %s" "$wt_branch" "./$wt_rel" "$status")"
+    fzf_lines+=("${display}"$'\t'"${wt_path}"$'\t'"${wt_branch}")
+  done < <(get_worktrees)
+
+  set +e
+  selected="$(printf "%s\n" "${fzf_lines[@]}" | fzf \
+    --with-nth=1 \
+    --delimiter=$'\t' \
+    --layout=reverse \
+    --header="$(printf '%-30s %-20s %s' 'BRANCH' 'PATH' 'STATUS')" \
+    --prompt="Go to worktree: " \
+    --height=40%)"
+  set -e
+
+  [[ -z "$selected" ]] && exit 0
+
+  wt_path="$(echo "$selected" | awk -F$'\t' '{print $2}')"
+
+  echo "$wt_path"
+  echo "$wt_path" >/tmp/wt_last_dir
+  copy_to_clipboard "cd \"$wt_path\""
+}
+
+cmd_rm() {
+  local branch="${1:-}"
+  local wt_path="" selected="" display=""
+
+  if [[ -z "$branch" ]]; then
+    command -v fzf &>/dev/null || die "fzf not found. Provide a branch name or install fzf."
+
+    local fzf_lines=()
+    while IFS=$'\t' read -r wt_path wt_branch; do
+      local wt_rel status
+      wt_rel="$(basename "$wt_path")"
+      status="$(get_worktree_status "$wt_path")"
+      display="$(printf "%-30s %-20s %s" "$wt_branch" "./$wt_rel" "$status")"
+      fzf_lines+=("${display}"$'\t'"${wt_path}"$'\t'"${wt_branch}")
+    done < <(get_worktrees)
+
+    [[ ${#fzf_lines[@]} -eq 0 ]] && {
+      info "No deletable worktrees found."
+      exit 0
+    }
+
+    set +e
+    selected="$(printf "%s\n" "${fzf_lines[@]}" | fzf \
+      --with-nth=1 \
+      --delimiter=$'\t' \
+      --layout=reverse \
+      --header="$(printf '%-30s %-20s %s' 'BRANCH' 'PATH' 'STATUS')" \
+      --prompt="Remove worktree: " \
+      --height=40%)"
+    set -e
+
+    [[ -z "$selected" ]] && exit 0
+
+    wt_path="$(echo "$selected" | awk -F$'\t' '{print $2}')"
+    branch="$(echo "$selected" | awk -F$'\t' '{print $3}')"
+  else
+    wt_path="$WORKSPACE_ROOT/$branch"
+  fi
+
+  [[ "$wt_path" == "$BASE_REPO_PATH" ]] && die "Safety Abort: Cannot delete the base repository ($wt_path)."
+  [[ ! -d "$wt_path" ]] && die "Worktree directory not found at $wt_path."
+
+  if [[ "$PWD" == "$wt_path"* ]]; then
+    die "You are currently inside the worktree you are trying to remove.\nPlease 'cd ..' (or use 'wt go') before removing it."
+  fi
+
+  local status
+  status="$(get_worktree_status "$wt_path")"
+
+  if [[ "$status" != "clean" ]]; then
+    warn "Worktree has uncommitted changes ($status):\n"
+    git -C "$wt_path" status --short >&2
+    echo >&2
+    read -rp "Proceed with removal? [y/N] " confirm
+    [[ "$confirm" =~ ^[Yy]$ ]] || {
+      info "Aborted."
+      exit 0
+    }
+  fi
+
+  info "Removing worktree at $wt_path..."
+  info "Gracefully unstowing local configurations..."
+  config remove "$wt_path" || true
+
+  git -C "$BASE_REPO_PATH" worktree remove "$wt_path" --force
+
+  success "Worktree removed."
+
+  if [[ "$branch" != "(detached HEAD)" ]]; then
+    read -rp "Also delete branch '$branch'? [y/N] " del_branch
+    if [[ "$del_branch" =~ ^[Yy]$ ]]; then
+      if git -C "$BASE_REPO_PATH" branch -d "$branch" 2>/dev/null; then
+        success "Branch '$branch' deleted."
+      else
+        warn "Branch '$branch' is not fully merged."
+        read -rp "Force delete? [y/N] " force_del
+        if [[ "$force_del" =~ ^[Yy]$ ]]; then
+          git -C "$BASE_REPO_PATH" branch -D "$branch"
+          success "Branch '$branch' force-deleted."
+        else
+          info "Branch '$branch' kept."
+        fi
+      fi
+    fi
+  fi
+}
+
+main() {
+  local cmd="${1:-help}"
+  shift || true
+
+  if [[ "$cmd" != "help" ]]; then
+    setup_context
+  fi
+
+  case "$cmd" in
+  add) cmd_add "$@" ;;
+  rm | cleanup) cmd_rm "$@" ;;
+  go | cd) cmd_go ;;
+  status | st) cmd_status ;;
+  help) cmd_help ;;
+  *)
+    warn "Unknown command: $cmd\n"
+    cmd_help
+    exit 1
+    ;;
+  esac
+}
+
+main "$@"

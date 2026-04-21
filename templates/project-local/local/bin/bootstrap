@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -e
+
+WT_PATH="${1:?Usage: bootstrap <worktree-path>}"
+cd "$WT_PATH"
+
+echo "=== Project Bootstrap ==="
+echo ""
+
+echo "[1/?] Injecting local configurations..."
+config install "$WT_PATH"
+
+# Add project-specific steps below. Examples:
+#
+# echo "[2/?] Trusting mise configurations..."
+# mise trust mise.toml
+#
+# echo "[3/?] Installing mise tools..."
+# mise install
+#
+# echo "[4/?] Installing dependencies..."
+# npm install
+
+echo "Bootstrap complete!"

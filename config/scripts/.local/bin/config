@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../lib/workspace.sh"
+
+TARGET_DIR=""
+
+resolve_target() {
+  local arg="${1:-}"
+
+  if [[ -n "$arg" ]]; then
+    if [[ "$arg" == /* ]]; then
+      TARGET_DIR="$arg"
+    elif [[ "$arg" != "." && "$arg" != ".." && -d "$WORKSPACE_ROOT/$arg" ]]; then
+      TARGET_DIR="$WORKSPACE_ROOT/$arg"
+    elif [[ -d "$arg" ]]; then
+      TARGET_DIR="$(cd "$arg" && pwd)"
+    else
+      die "Target '$arg' is not a valid path or worktree name."
+    fi
+  else
+    TARGET_DIR="$(select_target)"
+  fi
+}
+
+select_target() {
+  command -v fzf &>/dev/null || die "fzf not found. Provide a target argument or install fzf."
+
+  local fzf_lines=() wt_path wt_branch wt_rel display
+
+  wt_rel="$(basename "$BASE_REPO_PATH")"
+  local base_branch
+  base_branch="$(git -C "$BASE_REPO_PATH" symbolic-ref --short HEAD 2>/dev/null || echo "(detached)")"
+  display="$(printf "%-30s %s" "$base_branch (MAIN)" "./$wt_rel")"
+  fzf_lines+=("${display}"$'\t'"${BASE_REPO_PATH}")
+
+  while IFS= read -r line; do
+    if [[ "$line" == worktree\ * ]]; then
+      wt_path="${line#worktree }"
+    elif [[ "$line" == branch\ * ]] || [[ "$line" == detached ]]; then
+      [[ -d "$wt_path/.git" ]] && continue
+
+      if [[ "$line" == branch\ * ]]; then
+        wt_branch="${line#branch refs/heads/}"
+      else
+        wt_branch="(detached)"
+      fi
+      wt_rel="$(basename "$wt_path")"
+      display="$(printf "%-30s %s" "$wt_branch" "./$wt_rel")"
+      fzf_lines+=("${display}"$'\t'"${wt_path}")
+    fi
+  done < <(git -C "$BASE_REPO_PATH" worktree list --porcelain 2>/dev/null)
+
+  [[ ${#fzf_lines[@]} -eq 0 ]] && die "No targets found."
+
+  local selected
+  set +e
+  selected="$(printf "%s\n" "${fzf_lines[@]}" | fzf \
+    --with-nth=1 \
+    --delimiter=$'\t' \
+    --layout=reverse \
+    --header="$(printf '%-30s %s' 'BRANCH' 'PATH')" \
+    --prompt="Select target: " \
+    --height=40%)"
+  set -e
+
+  [[ -z "$selected" ]] && exit 0
+  echo "$selected" | awk -F$'\t' '{print $2}'
+}
+
+check_dependencies() {
+  command -v stow >/dev/null 2>&1 || die "GNU Stow is not installed (brew install stow)."
+}
+
+cmd_help() {
+  cat <<EOF
+Usage: config <command> [target]
+
+Commands:
+  i, install     Stow local config into target
+  rm, remove     Unstow local config from target
+  help           Show this help message
+
+Target can be a worktree name or path. If omitted, an interactive selector is shown.
+
+The source for stow is the <project>-local repo found in the workspace root.
+EOF
+}
+
+cmd_install() {
+  check_dependencies
+  resolve_target "${1:-}"
+  info "Source : $LOCAL_DIR"
+  info "Target : $TARGET_DIR"
+
+  stow --dir="$LOCAL_DIR" --target="$TARGET_DIR" --verbose=1 .
+
+  success "Configuration installed."
+}
+
+cmd_remove() {
+  check_dependencies
+  resolve_target "${1:-}"
+  info "Source : $LOCAL_DIR"
+  info "Target : $TARGET_DIR"
+
+  stow --dir="$LOCAL_DIR" --target="$TARGET_DIR" --verbose=1 --delete .
+
+  success "Configuration removed."
+}
+
+main() {
+  local cmd="${1:-help}"
+  shift || true
+
+  if [[ "$cmd" != "help" ]]; then
+    setup_context
+  fi
+
+  case "$cmd" in
+  i | install) cmd_install "$@" ;;
+  rm | remove) cmd_remove "$@" ;;
+  help) cmd_help ;;
+  *)
+    warn "Unknown command '$cmd'.\n"
+    cmd_help
+    exit 1
+    ;;
+  esac
+}
+
+main "$@"
