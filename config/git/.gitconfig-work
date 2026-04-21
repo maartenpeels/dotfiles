@@ -1,0 +1,6 @@
+[user]
+	name  = Maarten Peels
+	email = maarten.peels@merapar.com
+
+[core]
+	sshCommand = ssh -i ~/.ssh/id_rsa

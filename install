@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_DIR="$DOTFILES_DIR/config"
+
+die() { echo "Error: $*" >&2; exit 1; }
+
+command -v stow >/dev/null 2>&1 || die "GNU Stow not found. Install with: brew install stow"
+
+packages=()
+
+if [[ $# -gt 0 ]]; then
+    packages=("$@")
+else
+    for d in "$CONFIG_DIR"/*/; do
+        packages+=("$(basename "$d")")
+    done
+fi
+
+for pkg in "${packages[@]}"; do
+    [[ -d "$CONFIG_DIR/$pkg" ]] || die "Package not found: $pkg"
+    echo "Stowing $pkg..."
+    stow --dir="$CONFIG_DIR" --target="$HOME" --verbose=1 "$pkg"
+done
+
+echo "Done."

@@ -1,0 +1,6 @@
+[user]
+	name  = Maarten Peels
+	email = maartenpeels@gmail.com
+
+[core]
+	sshCommand = ssh -i ~/.ssh/id_rsa

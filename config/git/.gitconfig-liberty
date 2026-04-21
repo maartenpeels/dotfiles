@@ -1,0 +1,6 @@
+[user]
+	name  = Maarten Peels
+	email = mpeels.contractor@libertyglobal.com
+
+[core]
+	sshCommand = ssh -i ~/.ssh/id_rsa_lg_liberty
