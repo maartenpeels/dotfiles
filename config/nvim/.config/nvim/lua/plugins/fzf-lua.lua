@@ -1,0 +1,11 @@
+return {
+  { import = "lazyvim.plugins.extras.editor.fzf" },
+  {
+    "ibhagwan/fzf-lua",
+    keys = {
+      { "<leader><space>", LazyVim.pick("files", { root = false }), desc = "Find Files (cwd)" },
+      { "<leader>/", LazyVim.pick("live_grep", { root = false }), desc = "Grep (cwd)" },
+      { "<leader>;", function() require("fzf-lua").resume() end, desc = "Resume Picker" },
+    },
+  },
+}
