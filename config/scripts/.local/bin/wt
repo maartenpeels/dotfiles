@@ -19,6 +19,19 @@ copy_to_clipboard() {
   fi
 }
 
+# Shell wrapper reads /tmp/wt_next_cmd and pushes it into the next prompt's edit buffer
+write_next_cmd() {
+  echo "$1" > /tmp/wt_next_cmd
+}
+
+# Pre-fill next prompt with cd command + clipboard fallback
+offer_cd() {
+  local path="$1" cmd="cd \"$1\""
+  write_next_cmd "$cmd"
+  copy_to_clipboard "$cmd" || true
+  info "(hit Enter on the next prompt to jump there; also copied to clipboard)"
+}
+
 get_worktrees() {
   local wt_path="" wt_branch=""
 
@@ -60,13 +73,69 @@ cmd_help() {
 Usage: wt <command> [arguments]
 
 Commands:
+  setup        Bootstrap a -local config repo for the current project
   add <name>   Create a new worktree and bootstrap it
   rm [name]    Remove a worktree (interactive with fzf if no name given)
-  go           Navigate to an existing worktree using fzf
+  ls           Pick a worktree with fzf; pre-fills 'cd <path>' on next prompt
   dev [name]   Open a worktree in a dev session (cmux or tmux)
   status       Show all worktrees with their path and status
   help         Show this help message
 EOF
+}
+
+cmd_setup() {
+  local git_root current_dir_name common_dir
+
+  git_root="$(git rev-parse --show-toplevel 2>/dev/null)" ||
+    die "Not inside a git repository."
+
+  current_dir_name="$(basename "$git_root")"
+
+  if [[ "$current_dir_name" == *-local ]]; then
+    die "Already inside a -local repo. Run this from inside the main project repo."
+  fi
+
+  common_dir="$(git -C "$git_root" rev-parse --git-common-dir)"
+  local base_repo workspace_root local_dir project_name
+  base_repo="$(cd "$git_root" && cd "$common_dir/.." && pwd)"
+  workspace_root="$(dirname "$base_repo")"
+  project_name="$(basename "$base_repo")"
+  local_dir="$workspace_root/${project_name}-local"
+
+  [[ -d "$local_dir" ]] && die "-local repo already exists at $local_dir"
+
+  info "Creating $local_dir..."
+
+  # resolve template dir relative to this script's dotfiles repo
+  local template_dir
+  template_dir="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../../.." && pwd)/templates/project-local"
+  [[ -d "$template_dir" ]] || die "Template not found at $template_dir"
+
+  cp -r "$template_dir/." "$local_dir/"
+  mkdir -p "$local_dir/local/bin"
+  chmod +x "$local_dir/local/bin/bootstrap"
+
+  # stow ignore — prevent internal dirs from being symlinked into worktrees
+  cat >"$local_dir/.stow-local-ignore" <<'STOWEOF'
+^\.git$
+^\.stow-local-ignore$
+^local$
+^\.worktrees$
+^README.*$
+STOWEOF
+
+  # init git
+  git -C "$local_dir" init --quiet
+  git -C "$local_dir" add .
+  git -C "$local_dir" commit --quiet -m "init: scaffold ${project_name}-local"
+
+  success "Created ${project_name}-local at $local_dir"
+  echo >&2
+  info "Next steps:"
+  echo "  1. Edit $local_dir/local/bin/bootstrap — add project-specific setup" >&2
+  echo "  2. Drop files into $local_dir/ that should be stowed into each worktree" >&2
+  echo "     e.g. mise.local.toml, .claude/settings.local.json" >&2
+  echo "  3. Run: wt add <branch>  — creates a worktree and runs bootstrap" >&2
 }
 
 cmd_add() {
@@ -95,10 +164,7 @@ cmd_add() {
   fi
 
   success "Worktree setup complete!"
-  info "To enter your new workspace, run: cd \"$wt_path\""
-
-  echo "$wt_path" >/tmp/wt_last_dir
-  copy_to_clipboard "cd \"$wt_path\"" && info "(Command copied to clipboard)"
+  offer_cd "$wt_path"
 
   read -rp "Open dev session? [c]mux / [t]mux / [N]o: " open_in
   case "$open_in" in
@@ -173,7 +239,7 @@ cmd_status() {
   done < <(get_worktrees)
 }
 
-cmd_go() {
+cmd_ls() {
   command -v fzf &>/dev/null || die "fzf not found. Please install fzf to use this command."
 
   local fzf_lines=()
@@ -210,10 +276,7 @@ cmd_go() {
   [[ -z "$selected" ]] && exit 0
 
   wt_path="$(echo "$selected" | awk -F$'\t' '{print $2}')"
-
-  echo "$wt_path"
-  echo "$wt_path" >/tmp/wt_last_dir
-  copy_to_clipboard "cd \"$wt_path\""
+  offer_cd "$wt_path"
 }
 
 cmd_rm() {
@@ -307,14 +370,15 @@ main() {
   local cmd="${1:-help}"
   shift || true
 
-  if [[ "$cmd" != "help" ]]; then
+  if [[ "$cmd" != "help" && "$cmd" != "setup" ]]; then
     setup_context
   fi
 
   case "$cmd" in
+  setup) cmd_setup ;;
   add) cmd_add "$@" ;;
   rm | cleanup) cmd_rm "$@" ;;
-  go | cd) cmd_go ;;
+  ls | go | cd) cmd_ls ;;
   dev) cmd_dev "$@" ;;
   status | st) cmd_status ;;
   help) cmd_help ;;

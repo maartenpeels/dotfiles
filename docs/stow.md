@@ -20,8 +20,7 @@ dotfiles/
 │       └── .local/
 │           ├── bin/
 │           │   ├── wt
-│           │   ├── config
-│           │   └── init-local
+│           │   └── config
 │           └── lib/
 │               └── workspace.sh
 └── templates/

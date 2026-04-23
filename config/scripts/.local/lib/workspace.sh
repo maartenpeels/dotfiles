@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared workspace context detection for wt, config, and init-local.
+# Shared workspace context detection for wt and config.
 # Source this file; it exports WORKSPACE_ROOT, BASE_REPO_PATH, LOCAL_DIR.
 
 WORKSPACE_ROOT=""
