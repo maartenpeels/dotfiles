@@ -46,3 +46,6 @@
 [includeIf "gitdir:~/Projects/Work/LG/"]
 	path = ~/.gitconfig-liberty
 
+[includeIf "gitdir:~/Projects/Work/RTS/"]
+	path = ~/.gitconfig-keen
+

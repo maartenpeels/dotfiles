@@ -1,0 +1,6 @@
+[user]
+	name  = Maarten Peels
+	email = pem2buv@keen.tech
+
+[core]
+	sshCommand = ssh -i ~/.ssh/id_rsa_azure
