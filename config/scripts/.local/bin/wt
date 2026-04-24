@@ -73,13 +73,14 @@ cmd_help() {
 Usage: wt <command> [arguments]
 
 Commands:
-  setup        Bootstrap a -local config repo for the current project
-  add <name>   Create a new worktree and bootstrap it
-  rm [name]    Remove a worktree (interactive with fzf if no name given)
-  ls           Pick a worktree with fzf; pre-fills 'cd <path>' on next prompt
-  dev [name]   Open a worktree in a dev session (cmux or tmux)
-  status       Show all worktrees with their path and status
-  help         Show this help message
+  setup           Bootstrap a -local config repo for the current project
+  add <name>      Create a new worktree and bootstrap it
+  pr <num|name>   Checkout a GitHub PR in a new worktree and open it
+  rm [name]       Remove a worktree (interactive with fzf if no name given)
+  ls              Pick a worktree with fzf; pre-fills 'cd <path>' on next prompt
+  dev [name]      Open a worktree in a dev session (cmux or tmux)
+  status          Show all worktrees with their path and status
+  help            Show this help message
 EOF
 }
 
@@ -171,6 +172,17 @@ cmd_add() {
     c|C) "$SCRIPT_DIR/wt-cmux" "$wt_path" ;;
     t|T) "$SCRIPT_DIR/wt-tmux" "$wt_path" ;;
   esac
+}
+
+cmd_pr() {
+  local branch="${1:-}"
+  [[ -z "$branch" ]] && die "You must provide a branch name.\nUsage: wt pr <branch>"
+
+  info "Fetching origin/$branch..."
+  git -C "$BASE_REPO_PATH" fetch origin "$branch" \
+    || die "Could not fetch '$branch' from origin."
+
+  cmd_add "$branch"
 }
 
 cmd_dev() {
@@ -377,6 +389,7 @@ main() {
   case "$cmd" in
   setup) cmd_setup ;;
   add) cmd_add "$@" ;;
+  pr) cmd_pr "$@" ;;
   rm | cleanup) cmd_rm "$@" ;;
   ls | go | cd) cmd_ls ;;
   dev) cmd_dev "$@" ;;
