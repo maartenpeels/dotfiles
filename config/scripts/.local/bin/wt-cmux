@@ -2,7 +2,7 @@
 set -euo pipefail
 
 CMUX_BIN="${CMUX_BIN:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
-WT_AI_CMD="${WT_AI_CMD:-opencode}"
+WT_AI_CMD="${WT_AI_CMD:-claude-rts}"
 
 usage() {
   cat <<EOF
@@ -72,6 +72,10 @@ _cmux send-key --workspace "$WS" --surface "$S_NVIM" Enter >/dev/null
 
 _cmux send --workspace "$WS" --surface "$S_GIT" "lazygit" >/dev/null
 _cmux send-key --workspace "$WS" --surface "$S_GIT" Enter >/dev/null
+
+TMUX_SESSION="$(basename "$WTP" | tr '.' '-')"
+_cmux send --workspace "$WS" --surface "$S_SHELL" "tmux new-session -A -s \"$TMUX_SESSION\" -c \"$WTP\"" >/dev/null
+_cmux send-key --workspace "$WS" --surface "$S_SHELL" Enter >/dev/null
 
 _cmux send --workspace "$WS" --surface "$S_AI" "$WT_AI_CMD" >/dev/null
 _cmux send-key --workspace "$WS" --surface "$S_AI" Enter >/dev/null

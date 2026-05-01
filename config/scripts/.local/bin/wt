@@ -154,7 +154,13 @@ cmd_add() {
   elif git -C "$BASE_REPO_PATH" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
     git -C "$BASE_REPO_PATH" worktree add --track -b "$branch" "$wt_path" "origin/$branch"
   else
-    git -C "$BASE_REPO_PATH" worktree add -b "$branch" "$wt_path"
+    local remote_base
+    remote_base="$(git -C "$BASE_REPO_PATH" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/||')" || true
+    if [[ -n "$remote_base" ]]; then
+      git -C "$BASE_REPO_PATH" worktree add -b "$branch" "$wt_path" "$remote_base"
+    else
+      git -C "$BASE_REPO_PATH" worktree add -b "$branch" "$wt_path"
+    fi
   fi
 
   local bootstrap_script="$LOCAL_DIR/local/bin/bootstrap"
@@ -354,6 +360,27 @@ cmd_rm() {
   info "Removing worktree at $wt_path..."
   info "Gracefully unstowing local configurations..."
   config remove "$wt_path" || true
+
+  # Kill any open dev sessions for this worktree
+  local tmux_session cmux_name repo_name
+  tmux_session="$(basename "$wt_path" | tr '.' '-')"
+  repo_name="$(basename "$BASE_REPO_PATH")"
+  cmux_name="${repo_name} > ${branch}"
+
+  if command -v tmux &>/dev/null && tmux has-session -t "$tmux_session" 2>/dev/null; then
+    info "Killing tmux session '$tmux_session'..."
+    tmux kill-session -t "$tmux_session" || true
+  fi
+
+  local cmux_bin="${CMUX_BIN:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
+  if [[ -x "$cmux_bin" ]]; then
+    local ws_ref
+    ws_ref="$("$cmux_bin" list-workspaces 2>/dev/null | awk -v name="$cmux_name" 'index($0,name){print; exit}' | grep -oE 'workspace:[0-9]+')" || true
+    if [[ -n "$ws_ref" ]]; then
+      info "Killing cmux workspace '$cmux_name'..."
+      "$cmux_bin" close-workspace --workspace "$ws_ref" 2>/dev/null || true
+    fi
+  fi
 
   git -C "$BASE_REPO_PATH" worktree remove "$wt_path" --force
 

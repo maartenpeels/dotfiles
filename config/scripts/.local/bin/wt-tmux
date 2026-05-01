@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WT_AI_CMD="${WT_AI_CMD:-opencode}"
+WT_AI_CMD="${WT_AI_CMD:-claude-rts}"
 
 usage() {
   cat <<EOF
