@@ -1,28 +1,67 @@
 # dotfiles
 
-Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/).
+Personal dotfiles for macOS and Ubuntu/Debian, managed with [GNU Stow](https://www.gnu.org/software/stow/).
 
 ## Quick start
 
 ```sh
-cd ~/dotfiles
+git clone https://github.com/maartenpeels/dotfiles.git
+cd dotfiles
 ./bootstrap.sh
 ```
 
-`bootstrap.sh` installs packages and stows all configs.
+The repo can live anywhere; the scripts resolve paths relative to themselves.
+
+`bootstrap.sh` fetches submodules, installs packages (Homebrew on macOS, apt on Linux) and stows every
+package in `config/` into `$HOME`. It's safe to re-run: installed tools are skipped.
+
+After bootstrapping:
+
+- Open a new shell. If zsh isn't your login shell yet, the installer prints the `chsh` command to run.
+- Start `nvim` once so lazy.nvim installs its plugins.
+
+## What's included
+
+| Package     | Config                                                                        |
+|-------------|-------------------------------------------------------------------------------|
+| `zsh`       | `.zshrc`: oh-my-zsh, powerlevel10k, autosuggestions, syntax highlighting       |
+| `p10k`      | `.p10k.zsh`: powerlevel10k prompt config (regenerate with `p10k configure`)   |
+| `git`       | `.gitconfig`, per-directory identities, global ignore, `git bd` / `git diffview` |
+| `nvim`      | LazyVim-based Neovim config                                                   |
+| `tmux`      | `.tmux.conf` with tpm and the Nord theme                                      |
+| `alacritty` | Alacritty config and Nord theme                                               |
+| `ghostty`   | Ghostty config                                                                |
+| `lazygit`   | lazygit config                                                                |
+
+## Machine-specific config
+
+`.zshrc` only contains config that works on every machine. Tool integrations (mise, fzf, direnv,
+terraform) load only when the tool is installed.
+
+Anything specific to one machine goes in `~/.zshrc.local`, which is sourced last and is not part of
+this repo. For example: SDK paths, `JAVA_HOME`, work-specific tools, or tokens.
+
+```sh
+# ~/.zshrc.local
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export PATH="$PATH:$ANDROID_HOME/platform-tools"
+```
+
+Installers that append to `~/.zshrc` write into this repo through the symlink, so `git diff` shows
+them. Move those lines to `~/.zshrc.local`.
 
 ## Structure
 
 ```
 dotfiles/
-├── bootstrap.sh        # install packages + stow configs
-├── install             # stow configs only
-├── install-packages    # install CLI tools (brew / apt)
+├── bootstrap.sh        # submodules + install packages + stow configs
+├── install             # stow configs only (all, or: ./install zsh git)
+├── install-packages    # install tools (all, or: ./install-packages fzf)
 ├── packages/           # one file per tool
 └── config/             # one directory per stow package
 ```
 
 ## Docs
 
-- [Stow — config management](docs/stow.md)
+- [Stow: config management](docs/stow.md)
 - [Package installation](docs/packages.md)
