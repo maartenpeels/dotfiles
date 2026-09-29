@@ -5,7 +5,7 @@ command -v tree-sitter >/dev/null 2>&1 && { echo "  [skip] tree-sitter (already 
 
 case "$(uname -s)" in
     Darwin)
-        brew install tree-sitter
+        brew install tree-sitter-cli
         ;;
     Linux)
         TEMP=$(mktemp -d)
