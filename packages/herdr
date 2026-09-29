@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Real directory so stow links only config.toml; herdr keeps sockets, logs and sessions here
+mkdir -p "$HOME/.config/herdr"
+
+command -v herdr >/dev/null 2>&1 && { echo "  [skip] herdr (already installed)"; exit 0; }
+
+case "$(uname -s)" in
+    Darwin|Linux) curl -fsSL https://herdr.dev/install.sh | sh ;;
+    *) echo "Unsupported OS: $(uname -s)" >&2; exit 1 ;;
+esac

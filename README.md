@@ -31,6 +31,7 @@ After bootstrapping:
 | `tmux`      | `.tmux.conf` with tpm and the Nord theme                                      |
 | `alacritty` | Alacritty config and Nord theme                                               |
 | `lazygit`   | lazygit config                                                                |
+| `herdr`     | herdr config (`config.toml` only; runtime state stays out of the repo)        |
 
 ## Machine-specific config
 
