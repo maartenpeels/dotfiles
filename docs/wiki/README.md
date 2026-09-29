@@ -21,6 +21,12 @@ For how the repo itself works, see [Stow: config management](../stow.md) and
 | [git](git.md)               | Aliases, per-directory identities, `git bd`, `git diffview`, lazygit  |
 | [CLI tools](cli-tools.md)   | bat, fd, ripgrep, fzf, stow, stylua, tree-sitter, build tools, font   |
 
+## AI agents
+
+| Page                        | What it covers                                                        |
+|-----------------------------|-----------------------------------------------------------------------|
+| [Claude Code](claude.md)    | Global `CLAUDE.md`, settings, keep-awake hook, skills            |
+
 ## herdr (AI agent workspaces)
 
 | Page                                        | What it covers                                        |
@@ -44,4 +50,5 @@ For how the repo itself works, see [Stow: config management](../stow.md) and
 | git                                        | not installed by the repo  | `git`              |
 | lazygit                                    | `lazygit`                  | `lazygit`          |
 | herdr, its plugins, alerter (macOS)        | `herdr`                    | `herdr`            |
+| Claude Code skills                         | `claude`                   | `claude`           |
 | bat, fd, ripgrep, fzf, stow, stylua, tree-sitter, build-essential, JetBrains Mono Nerd Font | one file each | none |

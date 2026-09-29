@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Real directories so stow links only our files; Claude keeps sessions, history and caches here
+mkdir -p "$HOME/.claude/hooks" "$HOME/.claude/skills"
+
+# Global skills installed with the skills CLI (https://skills.sh), as "<repo> <skill>"
+SKILLS=(
+    "mattpocock/skills grill-me"
+    "mattpocock/skills tdd"
+    "mattpocock/skills improve-codebase-architecture"
+    "mattpocock/skills write-a-skill"
+    "leonardomso/rust-skills rust-skills"
+    "microsoft/skills cloud-solution-architect"
+)
+
+if ! command -v npx >/dev/null 2>&1; then
+    echo "  [skip] Claude skills (npx not found)"
+    exit 0
+fi
+
+for entry in "${SKILLS[@]}"; do
+    read -r repo skill <<<"$entry"
+    if [[ -e "$HOME/.claude/skills/$skill" ]]; then
+        echo "  [skip] skill $skill (already installed)"
+    else
+        echo "  Installing skill $skill..."
+        npx -y skills add "$repo" --skill "$skill" --global --agent claude-code --yes
+    fi
+done

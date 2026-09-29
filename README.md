@@ -32,6 +32,7 @@ After bootstrapping:
 | `alacritty` | Alacritty config and Nord theme                                               |
 | `lazygit`   | lazygit config                                                                |
 | `herdr`     | herdr config (`config.toml` only); plugins are listed in `packages/herdr`     |
+| `claude`    | Claude Code `CLAUDE.md`, `settings.json` and hooks; skills in `packages/claude` |
 
 ## Machine-specific config
 
