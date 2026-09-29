@@ -49,3 +49,6 @@
 [includeIf "gitdir:~/Projects/Work/RTS/"]
 	path = ~/.gitconfig-keen
 
+
+[includeIf "hasconfig:remote.*.url:git@ssh.dev.azure.com:v3/alfa1group/**"]
+	path = ~/.gitconfig-alfa1group
