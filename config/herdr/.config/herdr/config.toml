@@ -1,1 +1,32 @@
 onboarding = false
+
+# Nord, like tmux, Alacritty and nvim
+[theme]
+name = "nord"
+
+# Keys carried over from .tmux.conf, on top of herdr's defaults
+[keys]
+prefix = "ctrl+a"
+split_vertical = ["prefix+v", "prefix+|"]  # side by side
+focus_pane_left = ["prefix+h", "alt+left"]
+focus_pane_down = ["prefix+j", "alt+down"]
+focus_pane_up = ["prefix+k", "alt+up"]
+focus_pane_right = ["prefix+l", "alt+right"]
+
+# lazygit in a popup over the current pane
+[[keys.command]]
+key = "prefix+y"
+type = "popup"
+command = "lazygit"
+description = "lazygit"
+width = "90%"
+height = "90%"
+
+# herdr-which-key: every key binding and plugin action, runnable from the overlay
+[[keys.command]]
+key = "prefix+space"
+type = "popup"
+command = "sh ~/.config/herdr/plugins/config/cowboyvang.which-key/launch.sh"
+description = "which-key: show key bindings"
+width = "78%"
+height = "62%"
