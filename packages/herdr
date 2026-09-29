@@ -1,12 +1,54 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Real directory so stow links only config.toml; herdr keeps sockets, logs and sessions here
+# Real directory so stow links only config.toml; herdr keeps sockets, logs, sessions and plugins here
 mkdir -p "$HOME/.config/herdr"
 
-command -v herdr >/dev/null 2>&1 && { echo "  [skip] herdr (already installed)"; exit 0; }
+# Plugins installed from GitHub. see https://herdr.dev/plugins
+PLUGINS=(
+    persiyanov/herdr-reviewr    # review agent diffs, send line comments back to the agent
+    ChmaraX/herdr-nvim          # nvim sidebar, clickable file paths in agent output
+    kryptamine/herdr-auto-title # name tabs from branch and agent session
+    ntindle/herdr-resurrect     # snapshot and restore workspaces
+    CowboyVang/herdr-which-key  # overlay of every key binding and plugin action (prefix+space)
+)
+[[ "$(uname -s)" == Darwin ]] && PLUGINS+=(
+    yankewei/herdr-focus-notify # clickable macOS notifications when an agent is blocked or done
+)
 
-case "$(uname -s)" in
-    Darwin|Linux) curl -fsSL https://herdr.dev/install.sh | sh ;;
-    *) echo "Unsupported OS: $(uname -s)" >&2; exit 1 ;;
-esac
+if command -v herdr >/dev/null 2>&1; then
+    echo "  [skip] herdr (already installed)"
+else
+    case "$(uname -s)" in
+        Darwin|Linux) curl -fsSL https://herdr.dev/install.sh | sh ;;
+        *) echo "Unsupported OS: $(uname -s)" >&2; exit 1 ;;
+    esac
+fi
+
+# herdr-focus-notify shows its notifications with alerter
+if [[ "$(uname -s)" == Darwin ]]; then
+    if command -v alerter >/dev/null 2>&1; then
+        echo "  [skip] alerter (already installed)"
+    else
+        brew install vjeantet/tap/alerter
+    fi
+fi
+
+# The installer puts herdr in ~/.local/bin, which may not be on PATH yet
+HERDR="$(command -v herdr || echo "$HOME/.local/bin/herdr")"
+
+installed="$("$HERDR" plugin list)"
+for plugin in "${PLUGINS[@]}"; do
+    if grep -qF "[github:$plugin@" <<<"$installed"; then
+        echo "  [skip] herdr plugin $plugin (already installed)"
+    else
+        echo "  Installing herdr plugin $plugin..."
+        "$HERDR" plugin install "$plugin" --yes
+    fi
+done
+
+# which-key's build writes launch.sh (used by the prefix+space binding) while the plugin is still in
+# herdr's temporary checkout, so it points at a directory that's gone. Rewrite it from the installed copy.
+for root in "$HOME"/.config/herdr/plugins/github/cowboyvang.which-key-*/; do
+    [[ -d "$root" ]] && python3 "$root/bin/which-key" install-launcher >/dev/null
+done
