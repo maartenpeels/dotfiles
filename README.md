@@ -30,7 +30,6 @@ After bootstrapping:
 | `nvim`      | LazyVim-based Neovim config                                                   |
 | `tmux`      | `.tmux.conf` with tpm and the Nord theme                                      |
 | `alacritty` | Alacritty config and Nord theme                                               |
-| `ghostty`   | Ghostty config                                                                |
 | `lazygit`   | lazygit config                                                                |
 
 ## Machine-specific config
