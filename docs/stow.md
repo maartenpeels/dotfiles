@@ -13,18 +13,12 @@ config/
 ```
 dotfiles/
 ├── install                 # stow all (or specific) packages
-├── config/
-│   ├── git/
-│   │   └── .gitconfig
-│   └── scripts/
-│       └── .local/
-│           ├── bin/
-│           │   ├── wt
-│           │   └── config
-│           └── lib/
-│               └── workspace.sh
-└── templates/
-    └── project-local/
+└── config/
+    ├── git/
+    │   ├── .gitconfig          →  ~/.gitconfig
+    │   └── .config/git/        →  ~/.config/git/
+    └── zsh/
+        └── .zshrc              →  ~/.zshrc
 ```
 
 ## Usage

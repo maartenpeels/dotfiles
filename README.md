@@ -26,4 +26,3 @@ dotfiles/
 
 - [Stow — config management](docs/stow.md)
 - [Package installation](docs/packages.md)
-- [Worktree management](docs/worktree.md)
