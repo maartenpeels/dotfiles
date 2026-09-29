@@ -63,5 +63,6 @@ dotfiles/
 
 ## Docs
 
+- [Wiki: every tool and plugin, and how to use it](docs/wiki/README.md)
 - [Stow: config management](docs/stow.md)
 - [Package installation](docs/packages.md)
