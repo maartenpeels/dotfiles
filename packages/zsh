@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# zsh itself
+if command -v zsh >/dev/null 2>&1; then
+    echo "  [skip] zsh (already installed)"
+else
+    case "$(uname -s)" in
+        Darwin) brew install zsh ;;
+        Linux)  sudo apt-get install -y zsh ;;
+        *) echo "Unsupported OS: $(uname -s)" >&2; exit 1 ;;
+    esac
+fi
+
+# oh-my-zsh (keep our stowed .zshrc, don't switch shell or start zsh)
+ZSH="${ZSH:-$HOME/.oh-my-zsh}"
+if [[ -d "$ZSH" ]]; then
+    echo "  [skip] oh-my-zsh (already installed)"
+else
+    RUNZSH=no CHSH=no KEEP_ZSHRC=yes ZSH="$ZSH" \
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+fi
+
+# Theme and plugins
+ZSH_CUSTOM="${ZSH_CUSTOM:-$ZSH/custom}"
+
+clone() {
+    local repo="$1" kind="$2" name
+    name="$(basename "$repo")"
+    if [[ -d "$ZSH/$kind/$name" || -d "$ZSH_CUSTOM/$kind/$name" ]]; then
+        echo "  [skip] $name (already installed)"
+    else
+        git clone --depth=1 "https://github.com/$repo.git" "$ZSH_CUSTOM/$kind/$name"
+    fi
+}
+
+clone romkatv/powerlevel10k themes
+clone zsh-users/zsh-autosuggestions plugins
+clone zsh-users/zsh-syntax-highlighting plugins
+
+if [[ "$(basename "${SHELL:-}")" != "zsh" ]]; then
+    echo "  Default shell is ${SHELL:-unknown}. Switch with: chsh -s \"$(command -v zsh)\""
+fi
