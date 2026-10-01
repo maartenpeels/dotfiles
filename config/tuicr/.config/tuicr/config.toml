@@ -1,0 +1,3 @@
+# Nord, like tmux, Alacritty, nvim and herdr
+theme = "nord-dark"
+diff_view = "unified"

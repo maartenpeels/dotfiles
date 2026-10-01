@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# tuicr reviews pull requests in the terminal (docs/wiki/pr-review.md). For Bitbucket Cloud it
+# shells out to bkt, the Bitbucket CLI; GitHub goes through gh, which isn't installed here.
+
+if command -v tuicr >/dev/null 2>&1; then
+    echo "  [skip] tuicr (already installed)"
+else
+    case "$(uname -s)" in
+        Darwin) brew install tuicr ;;
+        Linux)  curl -fsSL https://tuicr.dev/install.sh | sh ;;
+        *) echo "Unsupported OS: $(uname -s)" >&2; exit 1 ;;
+    esac
+fi
+
+if command -v bkt >/dev/null 2>&1; then
+    echo "  [skip] bkt (already installed)"
+    exit 0
+fi
+
+case "$(uname -s)" in
+    Darwin)
+        brew install avivsinai/tap/bitbucket-cli
+        ;;
+    Linux)
+        TEMP=$(mktemp -d)
+        trap 'rm -rf "$TEMP"' EXIT
+        cd "$TEMP"
+
+        case "$(uname -m)" in
+            x86_64)        BKT_ARCH="x86_64" ;;
+            aarch64|arm64) BKT_ARCH="arm64" ;;
+            *) echo "Unsupported arch: $(uname -m)" >&2; exit 1 ;;
+        esac
+
+        URL=$(curl -s https://api.github.com/repos/avivsinai/bitbucket-cli/releases/latest \
+            | grep "browser_download_url.*linux_${BKT_ARCH}\.tar\.gz\"" \
+            | grep -o 'https://[^"]*')
+
+        [[ -z "$URL" ]] && { echo "Failed to fetch bkt release URL" >&2; exit 1; }
+
+        curl -L -o bkt.tar.gz "$URL"
+        tar xzf bkt.tar.gz
+        mkdir -p "$HOME/.local/bin"
+        mv "$(find . -type f -name bkt | head -1)" "$HOME/.local/bin/bkt"
+        chmod +x "$HOME/.local/bin/bkt"
+        ;;
+    *)
+        echo "Unsupported OS: $(uname -s)" >&2; exit 1
+        ;;
+esac

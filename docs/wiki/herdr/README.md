@@ -35,6 +35,8 @@ Set in `config/herdr/.config/herdr/config.toml`:
 | `ctrl+a`                   | The prefix (herdr's default is `ctrl+b`)                |
 | `prefix space`             | [which-key](which-key.md): every key and plugin action  |
 | `prefix y`                 | lazygit in a popup over the current pane. `q` closes it |
+| `prefix shift+y`           | Pick a pull request and review it in tuicr, in a pane that closes with it. See [Pull request review](../pr-review.md) |
+| `prefix shift+v`           | Toggle [reviewr](reviewr.md) beside the current pane         |
 | `prefix \|`                | Split side by side, like tmux (`prefix v` still works)  |
 | `alt+←/→/↑/↓`              | Move between panes, no prefix, like tmux                |
 
@@ -103,16 +105,16 @@ The action runs in the background, so its output doesn't show up in your termina
 
 ### Binding an action to a key
 
-For an action you use a lot, a direct key beats going through which-key. No plugin actions have
-their own key yet. Add a block like this to `config/herdr/.config/herdr/config.toml`, then press
-`prefix shift+r`:
+For an action you use a lot, a direct key beats going through which-key. reviewr's toggle has
+one (`prefix shift+v`). Add a block like this to `config/herdr/.config/herdr/config.toml`, then
+press `prefix shift+r`:
 
 ```toml
 [[keys.command]]
-key = "prefix+alt+r"
+key = "prefix+shift+v"
 type = "plugin_action"
 command = "persiyanov.reviewr.toggle"   # <plugin-id>.<action-id>
-description = "reviewr"
+description = "reviewr: toggle the diff review pane"
 ```
 
 Several plugin READMEs suggest keys that herdr already uses: `prefix+e` and `prefix+o` in

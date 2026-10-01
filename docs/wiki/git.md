@@ -19,7 +19,7 @@ The zsh `git` plugin adds its own shorter aliases too (`gst`, `gco`, ...), see [
 
 ## Custom commands
 
-These live in `config/git/.config/git/commands/`, which zsh puts on `$PATH`. Both open
+These live in `config/git/.config/git/commands/`, which zsh puts on `$PATH`. The first two open
 [diffview in nvim](neovim.md#diffview).
 
 | Command                          | Shows                                                                 |
@@ -28,6 +28,7 @@ These live in `config/git/.config/git/commands/`, which zsh puts on `$PATH`. Bot
 | `git diffview`                   | Uncommitted changes                                                   |
 | `git diffview <commit>`          | Changes since `<commit>`                                              |
 | `git diffview <from> <to>`       | Changes between two commits                                           |
+| `git pr [number]`                | A pull request in tuicr, picked with fzf when no number is given. See [Pull request review](pr-review.md) |
 
 Untracked files are left out.
 

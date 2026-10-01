@@ -26,11 +26,12 @@ After bootstrapping:
 |-------------|-------------------------------------------------------------------------------|
 | `zsh`       | `.zshrc`: oh-my-zsh, powerlevel10k, autosuggestions, syntax highlighting       |
 | `p10k`      | `.p10k.zsh`: powerlevel10k prompt config (regenerate with `p10k configure`)   |
-| `git`       | `.gitconfig`, per-directory identities, global ignore, `git bd` / `git diffview` |
+| `git`       | `.gitconfig`, per-directory identities, global ignore, `git bd` / `git diffview` / `git pr` |
 | `nvim`      | LazyVim-based Neovim config                                                   |
 | `tmux`      | `.tmux.conf` with tpm and the Nord theme                                      |
 | `alacritty` | Alacritty config and Nord theme                                               |
 | `lazygit`   | lazygit config                                                                |
+| `tuicr`     | tuicr config (Nord theme); tuicr and bkt are installed by `packages/tuicr`     |
 | `herdr`     | herdr config (`config.toml` only); plugins are listed in `packages/herdr`     |
 | `claude`    | Claude Code `CLAUDE.md`, `settings.json` and hooks; skills in `packages/claude` |
 

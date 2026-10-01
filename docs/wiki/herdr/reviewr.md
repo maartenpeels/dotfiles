@@ -7,8 +7,8 @@ comments to the agent's input. It never edits files and never sends anything on 
 
 ## Opening it
 
-It opens by itself when herdr creates a workspace for a git worktree (`prefix shift+g`).
-Otherwise:
+`prefix shift+v` toggles it beside the current pane, in any workspace. It also opens by itself
+when herdr creates a workspace for a git worktree (`prefix shift+g`). From a shell:
 
 ```sh
 herdr plugin action invoke persiyanov.reviewr.toggle   # or .open / .close
@@ -63,15 +63,17 @@ The **PR** tab shows the branch's open pull request, read-only. It needs an auth
 
 ## Config
 
-`~/.config/herdr/plugins/config/persiyanov.reviewr/config.toml`. Create it if you need it; edits
-apply on the next refresh. For example:
+`config/herdr/.config/herdr/plugins/config/persiyanov.reviewr/config.toml`, stowed to
+`~/.config/herdr/plugins/config/persiyanov.reviewr/config.toml`. It sets the Nord theme and
+`default_scope = "branch"`. Edits apply on the next refresh. Other options:
 
 ```toml
-theme = "nord"            # default: catppuccin
-default_scope = "branch"
 auto_open = false         # don't open on new worktree workspaces
 editor = "nvim +{line} {file}"
 ```
+
+reviewr's PR tab reads GitHub, GitLab and Azure DevOps, not Bitbucket. For reviewing a pull
+request itself, on either host, use [tuicr](../pr-review.md).
 
 ## Gotchas
 

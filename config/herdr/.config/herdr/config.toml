@@ -22,6 +22,21 @@ description = "lazygit"
 width = "90%"
 height = "90%"
 
+# Pick an open pull request and review it in tuicr; the pane closes when tuicr exits.
+# Full path: herdr runs this with /bin/sh and a bare PATH, where git can't find git-pr.
+[[keys.command]]
+key = "prefix+shift+y"
+type = "pane"
+command = "$HOME/.config/git/commands/git-pr"
+description = "review a pull request in tuicr"
+
+# reviewr beside the current pane, for an agent's local diff. tuicr (prefix+shift+y) is for PRs
+[[keys.command]]
+key = "prefix+shift+v"
+type = "plugin_action"
+command = "persiyanov.reviewr.toggle"
+description = "reviewr: toggle the diff review pane"
+
 # herdr-which-key: every key binding and plugin action, runnable from the overlay
 [[keys.command]]
 key = "prefix+space"

@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# git pr [number]: review one of this repo's pull requests in tuicr.
+# Without a number, pick from the open pull requests with fzf. GitHub is listed with gh,
+# Bitbucket Cloud with twg. tuicr itself reads and submits through gh or bkt.
+set -euo pipefail
+
+# herdr runs key commands with /bin/sh and a bare PATH, from a pane that isn't in the repo
+export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
+[[ -z "${HERDR_ACTIVE_PANE_CWD:-}" ]] || cd "$HERDR_ACTIVE_PANE_CWD"
+
+usage() { echo "usage: git pr [-l] [number]" >&2; exit 2; }
+
+# A temporary herdr pane closes the moment this exits, so keep an error readable
+fail() {
+    echo "git pr: $*" >&2
+    [[ -z "${HERDR_ACTIVE_PANE_ID:-}" || ! -t 0 ]] || read -r -p "press enter to close"
+    exit 1
+}
+
+need() {
+    command -v "$1" >/dev/null 2>&1 || fail "$1 not found. $2"
+}
+
+list_only=false
+case "${1:-}" in
+    -l|--list) list_only=true; shift ;;
+    -h|--help) usage ;;
+esac
+[[ $# -le 1 ]] || usage
+
+remote="$(git remote get-url upstream 2>/dev/null || git remote get-url origin 2>/dev/null)" \
+    || fail "not inside a git repository with a remote (in $PWD)"
+case "$remote" in
+    *github.com*)    host=github ;;
+    *bitbucket.org*) host=bitbucket ;;
+    *) fail "remote '$remote' is not on GitHub or Bitbucket Cloud" ;;
+esac
+
+# One tab-separated line per open pull request: number, title, author, state
+list_prs() {
+    case "$host" in
+        github)
+            need gh "Run: gh auth login"
+            gh pr list --limit 100 --json number,title,author,isDraft,reviewDecision --jq '
+                .[] | [
+                    .number, .title, .author.login,
+                    (if .isDraft then "draft" else (.reviewDecision // "" | ascii_downcase | gsub("_"; " ")) end)
+                ] | @tsv'
+            ;;
+        bitbucket)
+            need twg "Run: twg auth login"
+            need jq "Run: ./install-packages jq"
+            twg bb prs query --output json --output-summary none | jq -r '
+                .[] | [.id, .title, .author.display_name, (if .draft then "draft" else "" end)] | @tsv'
+            ;;
+    esac
+}
+
+format() {
+    awk -F'\t' '{ printf "#%-5s %s  (%s%s)\n", $1, $2, $3, ($4 == "" ? "" : ", " $4) }'
+}
+
+if $list_only; then
+    list_prs | format
+    exit 0
+fi
+
+need tuicr "Run: ./install-packages tuicr"
+[[ "$host" != bitbucket ]] || need bkt "Run: ./install-packages tuicr, then: bkt auth login https://bitbucket.org --kind cloud --web-token"
+
+if [[ $# -eq 1 ]]; then
+    number="$1"
+else
+    need fzf "Run: ./install-packages fzf"
+    lines="$(list_prs | format)"
+    [[ -n "$lines" ]] || fail "no open pull requests"
+    choice="$(printf '%s\n' "$lines" | fzf --prompt 'pull request> ' --header 'enter: review in tuicr   esc: cancel')"
+    number="${choice#\#}"
+    number="${number%% *}"
+fi
+
+tuicr pr "$number" || fail "tuicr exited with status $?"

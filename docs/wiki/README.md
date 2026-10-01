@@ -19,7 +19,8 @@ For how the repo itself works, see [Stow: config management](../stow.md) and
 |-----------------------------|-----------------------------------------------------------------------|
 | [Neovim](neovim.md)         | LazyVim, custom pickers, diffview                                     |
 | [git](git.md)               | Aliases, per-directory identities, `git bd`, `git diffview`, lazygit  |
-| [CLI tools](cli-tools.md)   | bat, fd, ripgrep, fzf, stow, stylua, tree-sitter, build tools, font   |
+| [Pull request review](pr-review.md) | `git pr`: review GitHub and Bitbucket PRs in tuicr, `prefix shift+y` in herdr |
+| [CLI tools](cli-tools.md)   | bat, fd, ripgrep, fzf, jq, stow, stylua, tree-sitter, build tools, font |
 
 ## AI agents
 
@@ -49,6 +50,7 @@ For how the repo itself works, see [Stow: config management](../stow.md) and
 | Neovim                                     | `neovim`                   | `nvim`             |
 | git                                        | not installed by the repo  | `git`              |
 | lazygit                                    | `lazygit`                  | `lazygit`          |
+| tuicr, bkt (Bitbucket CLI)                 | `tuicr`                    | `tuicr`            |
 | herdr, its plugins, alerter (macOS)        | `herdr`                    | `herdr`            |
 | Claude Code skills                         | `claude`                   | `claude`           |
-| bat, fd, ripgrep, fzf, stow, stylua, tree-sitter, build-essential, JetBrains Mono Nerd Font | one file each | none |
+| bat, fd, ripgrep, fzf, jq, stow, stylua, tree-sitter, build-essential, JetBrains Mono Nerd Font | one file each | none |

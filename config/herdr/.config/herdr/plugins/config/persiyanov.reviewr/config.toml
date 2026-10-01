@@ -1,0 +1,4 @@
+# Nord, like the rest of herdr
+theme = "nord"
+# A worktree workspace is a branch under review, so start with everything since it left the base
+default_scope = "branch"

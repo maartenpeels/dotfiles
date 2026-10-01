@@ -1,0 +1,3 @@
+BREW=jq
+APT=jq
+CHECK=jq

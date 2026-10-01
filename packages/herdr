@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Real directory so stow links only config.toml; herdr keeps sockets, logs, sessions and plugins here
-mkdir -p "$HOME/.config/herdr"
+# Real directories so stow links only config.toml and the reviewr config; herdr keeps sockets,
+# logs, sessions and plugins here
+mkdir -p "$HOME/.config/herdr/plugins/config/persiyanov.reviewr"
 
 # Plugins installed from GitHub. see https://herdr.dev/plugins
 PLUGINS=(
