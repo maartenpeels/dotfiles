@@ -37,6 +37,7 @@ for example in a container without systemd, the hook does nothing.
 | grill-me, tdd, improve-codebase-architecture, write-a-skill | `mattpocock/skills` |
 | rust-skills                     | `leonardomso/rust-skills`  |
 | cloud-solution-architect        | `microsoft/skills`         |
+| vercel-composition-patterns     | `vercel-labs/agent-skills` |
 
 Add one by adding a line to `SKILLS` in `packages/claude` and running `./install-packages claude`.
 

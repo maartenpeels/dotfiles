@@ -12,6 +12,7 @@ SKILLS=(
     "mattpocock/skills write-a-skill"
     "leonardomso/rust-skills rust-skills"
     "microsoft/skills cloud-solution-architect"
+    "vercel-labs/agent-skills vercel-composition-patterns"
 )
 
 if ! command -v npx >/dev/null 2>&1; then
